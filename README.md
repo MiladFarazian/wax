@@ -22,6 +22,17 @@ Wax wins on the three things that matter:
 See [docs/SPRINT.md](docs/SPRINT.md) for the full analysis and
 [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) for open decisions.
 
+## Screenshots
+
+Phase 0 running on the web target with `MockProvider` sample data. Note the
+four-tab bar with **no Reels tab** — the core of the Wax thesis.
+
+| Home | Profile | Inbox | Search |
+|---|---|---|---|
+| ![Home feed](docs/screenshots/home.png) | ![Profile](docs/screenshots/profile.png) | ![Inbox](docs/screenshots/inbox.png) | ![Search](docs/screenshots/search.png) |
+
+> The "Refreshing…" bar in some shots is an Expo dev-mode toast, not part of Wax.
+
 ## Stack
 
 React Native + Expo (TypeScript) → one codebase for **iOS, Android, and web**.
