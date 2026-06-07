@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Wax",
+    "slug": "wax",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "wax",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#F6EBD3"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wax.app"
+    },
+    "android": {
+      "package": "com.wax.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F6EBD3"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
