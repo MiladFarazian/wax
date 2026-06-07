@@ -4,7 +4,25 @@
 > Grouped by theme. Each has my **recommendation** so we can move fast — just
 > confirm or override. Companion to [`SPRINT.md`](./SPRINT.md).
 
-Legend: ⭐ = my recommended default · ❗ = blocking (needed before building that part)
+Legend: ⭐ = my recommended default · ❗ = blocking (needed before building that part) · ✅ = decided
+
+---
+
+## ✅ Decisions locked (2026-06-07)
+
+These were confirmed and now drive Phase 1 (the real `IGPrivateProvider`):
+
+- **#1 IG access:** Unofficial Instagram access, behind the swappable `SocialProvider`.
+- **#3 Auth mechanism:** **Session-token import** — user logs into real Instagram
+  (webview), Wax captures and reuses the resulting session token. Lowest ban risk;
+  Wax never handles raw passwords. _(Supersedes the old ⭐ in #3.)_
+- **#2 Token storage:** **On-device only** (Keychain/Keystore via `expo-secure-store`);
+  never synced to any Wax server.
+- **#7 Reels definition:** Remove the Reels tab/create flow **and** filter out any feed/
+  Explore item Instagram tags as a Reel (`product_type: "clips"`). Keep Stories and
+  normal in-feed video.
+
+Still open / using ⭐ defaults until you say otherwise: #4, #5, #6, #8–#27.
 
 ---
 
