@@ -1,24 +1,71 @@
-import { memo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
 import { useToggleLike } from "@/lib/hooks";
-import type { Post } from "@/types/social";
+import type { MediaItem, Post } from "@/types/social";
+
+const DOUBLE_TAP_MS = 280;
 
 /**
- * PostCard — an Instagram feed post, mirrored 1:1 (docs/SPRINT.md §4): avatar +
- * username header with a more menu, full-bleed square media, the heart/comment/
- * share + bookmark action row, likes, caption, comments link, and a relative
- * timestamp. There is no Reels variant — Wax never renders Reels.
+ * PostCard — an Instagram feed post, mirrored 1:1 (docs/SPRINT.md §4): header,
+ * full-bleed square media with swipeable carousels, double-tap-to-like with the
+ * heart burst, the heart/comment/share + bookmark row, likes, caption, comments,
+ * and a relative timestamp. There is no Reels variant — Wax never renders Reels.
  */
 function PostCardImpl({ post }: { post: Post }) {
   const c = useIG();
+  const { width } = useWindowDimensions();
   const toggleLike = useToggleLike();
-  const media = post.media[0];
-  const isVideo = media?.kind === "video";
-  const isCarousel = post.kind === "carousel" || post.media.length > 1;
+  const media = post.media;
+  const isCarousel = post.kind === "carousel" || media.length > 1;
+  const isVideo = media[0]?.kind === "video";
+
+  const [index, setIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // FlashList recycles this component for other posts — reset the carousel.
+  useEffect(() => {
+    setIndex(0);
+    scrollRef.current?.scrollTo({ x: 0, animated: false });
+  }, [post.id]);
+
+  // Double-tap heart burst (RN Animated — no reanimated/babel dependency).
+  const scale = useRef(new Animated.Value(0.3)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const burst = useCallback(() => {
+    scale.setValue(0.3);
+    opacity.setValue(0);
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, friction: 4, tension: 140, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.9, duration: 120, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0, duration: 300, delay: 500, useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, [scale, opacity]);
+
+  const onDoubleTap = useCallback(() => {
+    if (!post.likedByMe) toggleLike.mutate({ postId: post.id, like: true });
+    burst();
+  }, [post.likedByMe, post.id, toggleLike, burst]);
+
+  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (i !== index) setIndex(i);
+  };
 
   return (
     <View style={[styles.card, { backgroundColor: c.bg }]}>
@@ -32,45 +79,56 @@ function PostCardImpl({ post }: { post: Post }) {
               <Ionicons name="checkmark-circle" size={13} color={c.link} style={{ marginLeft: 3 }} />
             ) : null}
           </View>
-          {post.isSponsored ? (
-            <Text style={[styles.sub, { color: c.secondary }]}>Sponsored</Text>
-          ) : null}
+          {post.isSponsored ? <Text style={[styles.sub, { color: c.secondary }]}>Sponsored</Text> : null}
         </View>
         <Ionicons name="ellipsis-horizontal" size={20} color={c.icon} />
       </View>
 
       {/* Media */}
-      <View style={styles.mediaWrap}>
-        <Image
-          source={media?.url}
-          placeholder={media?.blurhash}
-          style={styles.media}
-          contentFit="cover"
-          transition={120}
-          recyclingKey={post.id}
-        />
+      <View style={[styles.mediaWrap, { width, height: width }]}>
+        {isCarousel ? (
+          <ScrollView
+            ref={scrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onScrollEnd}
+          >
+            {media.map((m, i) => (
+              <TappableMedia key={i} media={m} size={width} recyclingKey={`${post.id}:${i}`} onDoubleTap={onDoubleTap} />
+            ))}
+          </ScrollView>
+        ) : (
+          <TappableMedia media={media[0]} size={width} recyclingKey={post.id} onDoubleTap={onDoubleTap} />
+        )}
+
         {isCarousel ? (
           <View style={styles.countBadge} pointerEvents="none">
-            <Text style={styles.countText}>1/{post.media.length}</Text>
+            <Text style={styles.countText}>{index + 1}/{media.length}</Text>
           </View>
         ) : null}
-        {isVideo ? (
-          <View style={styles.playWrap} pointerEvents="none">
+
+        {isVideo && !isCarousel ? (
+          <View style={styles.overlayCenter} pointerEvents="none">
             <View style={styles.playCircle}>
               <Ionicons name="play" size={26} color="#fff" style={{ marginLeft: 3 }} />
             </View>
           </View>
         ) : null}
+
+        {/* Double-tap heart burst */}
+        <View style={styles.overlayCenter} pointerEvents="none">
+          <Animated.View style={{ opacity, transform: [{ scale }] }}>
+            <Ionicons name="heart" size={96} color="#fff" style={styles.burstHeart} />
+          </Animated.View>
+        </View>
       </View>
 
       {/* Carousel dots */}
       {isCarousel ? (
         <View style={styles.dots}>
-          {post.media.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, { backgroundColor: i === 0 ? c.link : c.separator }]}
-            />
+          {media.map((_, i) => (
+            <View key={i} style={[styles.dot, { backgroundColor: i === index ? c.link : c.separator }]} />
           ))}
         </View>
       ) : null}
@@ -113,6 +171,42 @@ function PostCardImpl({ post }: { post: Post }) {
   );
 }
 
+/** A media page that likes the post on double-tap while letting swipes through. */
+function TappableMedia({
+  media,
+  size,
+  recyclingKey,
+  onDoubleTap,
+}: {
+  media?: MediaItem;
+  size: number;
+  recyclingKey: string;
+  onDoubleTap: () => void;
+}) {
+  const lastTap = useRef(0);
+  const onPress = () => {
+    const now = Date.now();
+    if (now - lastTap.current < DOUBLE_TAP_MS) {
+      lastTap.current = 0;
+      onDoubleTap();
+    } else {
+      lastTap.current = now;
+    }
+  };
+  return (
+    <Pressable onPress={onPress} style={{ width: size, height: size }}>
+      <Image
+        source={media?.url}
+        placeholder={media?.blurhash}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={120}
+        recyclingKey={recyclingKey}
+      />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   card: { marginBottom: 6 },
   header: {
@@ -127,8 +221,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center" },
   username: { fontSize: 13, fontWeight: "600" },
   sub: { fontSize: 11, marginTop: 1 },
-  mediaWrap: { width: "100%", aspectRatio: 1 },
-  media: { width: "100%", height: "100%" },
+  mediaWrap: { position: "relative" },
   countBadge: {
     position: "absolute",
     top: 10,
@@ -139,7 +232,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   countText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  playWrap: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  overlayCenter: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
   playCircle: {
     width: 56,
     height: 56,
@@ -147,6 +240,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  burstHeart: {
+    textShadowColor: "rgba(0,0,0,0.25)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   dots: { flexDirection: "row", justifyContent: "center", gap: 4, paddingTop: 8 },
   dot: { width: 6, height: 6, borderRadius: 3 },
