@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFeed, useProfile } from "@/lib/hooks";
 import { useAuth } from "@/lib/AuthContext";
@@ -17,6 +18,7 @@ import type { Post } from "@/types/social";
  */
 export default function Profile() {
   const c = useIG();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
   const profile = useProfile("u_me");
@@ -69,7 +71,7 @@ export default function Profile() {
             ) : null}
 
             <View style={styles.buttons}>
-              <ProfileButton label="Edit profile" bg={c.inputBg} text={c.text} />
+              <ProfileButton label="Edit profile" bg={c.inputBg} text={c.text} onPress={() => router.push("/edit-profile")} />
               <ProfileButton label="Share profile" bg={c.inputBg} text={c.text} />
             </View>
 
@@ -123,9 +125,19 @@ function Stat({
   );
 }
 
-function ProfileButton({ label, bg, text }: { label: string; bg: string; text: string }) {
+function ProfileButton({
+  label,
+  bg,
+  text,
+  onPress,
+}: {
+  label: string;
+  bg: string;
+  text: string;
+  onPress?: () => void;
+}) {
   return (
-    <Pressable style={[styles.button, { backgroundColor: bg }]}>
+    <Pressable style={[styles.button, { backgroundColor: bg }]} onPress={onPress}>
       <Text style={[styles.buttonText, { color: text }]}>{label}</Text>
     </Pressable>
   );
