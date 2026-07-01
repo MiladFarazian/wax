@@ -15,8 +15,39 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
-import { useToggleLike } from "@/lib/hooks";
+import { useToggleLike, useToggleSave } from "@/lib/hooks";
 import type { MediaItem, Post } from "@/types/social";
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+/** An icon button that pops (scale bounce) on tap, like IG's action row. */
+function PopIcon({
+  name,
+  size,
+  color,
+  onPress,
+}: {
+  name: IoniconName;
+  size: number;
+  color: string;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const handle = () => {
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 1.25, duration: 90, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, friction: 3, tension: 200, useNativeDriver: true }),
+    ]).start();
+    onPress();
+  };
+  return (
+    <Pressable hitSlop={8} onPress={handle}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Ionicons name={name} size={size} color={color} />
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 const DOUBLE_TAP_MS = 280;
 
@@ -31,6 +62,7 @@ function PostCardImpl({ post }: { post: Post }) {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const toggleLike = useToggleLike();
+  const toggleSave = useToggleSave();
   const openComments = () => router.push(`/comments/${post.id}`);
   const media = post.media;
   const isCarousel = post.kind === "carousel" || media.length > 1;
@@ -138,22 +170,23 @@ function PostCardImpl({ post }: { post: Post }) {
 
       {/* Actions */}
       <View style={styles.actions}>
-        <Pressable
-          hitSlop={8}
+        <PopIcon
+          name={post.likedByMe ? "heart" : "heart-outline"}
+          size={26}
+          color={post.likedByMe ? c.like : c.icon}
           onPress={() => toggleLike.mutate({ postId: post.id, like: !post.likedByMe })}
-        >
-          <Ionicons
-            name={post.likedByMe ? "heart" : "heart-outline"}
-            size={26}
-            color={post.likedByMe ? c.like : c.icon}
-          />
-        </Pressable>
+        />
         <Pressable hitSlop={8} onPress={openComments} style={styles.action}>
           <Ionicons name="chatbubble-outline" size={25} color={c.icon} />
         </Pressable>
         <Ionicons name="paper-plane-outline" size={25} color={c.icon} style={styles.action} />
         <View style={{ flex: 1 }} />
-        <Ionicons name={post.savedByMe ? "bookmark" : "bookmark-outline"} size={25} color={c.icon} />
+        <PopIcon
+          name={post.savedByMe ? "bookmark" : "bookmark-outline"}
+          size={25}
+          color={c.icon}
+          onPress={() => toggleSave.mutate({ postId: post.id, save: !post.savedByMe })}
+        />
       </View>
 
       {/* Meta */}

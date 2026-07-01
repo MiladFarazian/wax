@@ -125,3 +125,30 @@ export function useToggleLike() {
     },
   });
 }
+
+/** Optimistic save/bookmark toggle — mirrors useToggleLike. */
+export function useToggleSave() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, save }: { postId: ID; save: boolean }) =>
+      getProvider().setSave(postId, save),
+    onMutate: async ({ postId, save }) => {
+      await qc.cancelQueries({ queryKey: ["feed"] });
+      const prev = qc.getQueryData(["feed"]);
+      qc.setQueryData(["feed"], (data: any) => {
+        if (!data) return data;
+        return {
+          ...data,
+          pages: data.pages.map((page: Page<Post>) => ({
+            ...page,
+            items: page.items.map((p) => (p.id === postId ? { ...p, savedByMe: save } : p)),
+          })),
+        };
+      });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["feed"], ctx.prev);
+    },
+  });
+}
