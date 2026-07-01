@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { getProvider } from "@/providers";
-import type { Comment, ID, Page, Post } from "@/types/social";
+import type { Comment, DirectMessage, ID, Page, Post } from "@/types/social";
 
 export function useFeed() {
   return useInfiniteQuery({
@@ -65,6 +65,30 @@ export function useConversations() {
     queryFn: ({ pageParam }) => getProvider().getConversations(pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor,
+  });
+}
+
+export function useMessages(conversationId: ID) {
+  return useInfiniteQuery({
+    queryKey: ["messages", conversationId],
+    queryFn: ({ pageParam }) => getProvider().getMessages(conversationId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: Page<DirectMessage>) => last.nextCursor,
+  });
+}
+
+/** Send a DM; optimistically prepends it (newest-first, for an inverted list). */
+export function useSendMessage(conversationId: ID) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) => getProvider().sendMessage(conversationId, text),
+    onSuccess: (msg) => {
+      qc.setQueryData(["messages", conversationId], (data: any) => {
+        if (!data?.pages?.length) return data;
+        const [first, ...rest] = data.pages;
+        return { ...data, pages: [{ ...first, items: [msg, ...first.items] }, ...rest] };
+      });
+    },
   });
 }
 

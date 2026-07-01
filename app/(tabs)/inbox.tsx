@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useConversations, useProfile } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
@@ -13,6 +14,7 @@ import type { Conversation } from "@/types/social";
 export default function Inbox() {
   const c = useIG();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const convos = useConversations();
   const me = useProfile("u_me");
 
@@ -48,7 +50,7 @@ export default function Inbox() {
         renderItem={({ item }) => {
           const other = item.participants.find((p) => p.id !== "u_me") ?? item.participants[0];
           return (
-            <View style={styles.row}>
+            <Pressable style={styles.row} onPress={() => router.push(`/dm/${item.id}`)}>
               <Image source={other.avatarUrl} style={styles.avatar} contentFit="cover" />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.name, { color: c.text, fontWeight: item.unread ? "600" : "400" }]}>
@@ -69,7 +71,7 @@ export default function Inbox() {
               </View>
               {item.unread ? <View style={[styles.unread, { backgroundColor: c.link }]} /> : null}
               <Ionicons name="camera-outline" size={24} color={c.icon} />
-            </View>
+            </Pressable>
           );
         }}
       />
