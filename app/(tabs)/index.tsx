@@ -34,7 +34,9 @@ export default function HomeFeed() {
       <View style={[styles.topBar, { borderBottomColor: c.separator }]}>
         <Text style={[wordmark, styles.wordmark, { color: c.text }]}>Wax</Text>
         <View style={styles.topIcons}>
-          <Ionicons name="heart-outline" size={26} color={c.icon} />
+          <Pressable hitSlop={8} onPress={() => router.push("/activity")}>
+            <Ionicons name="heart-outline" size={26} color={c.icon} />
+          </Pressable>
           <Pressable hitSlop={8} onPress={() => router.push("/inbox")}>
             <Ionicons name="paper-plane-outline" size={25} color={c.icon} />
           </Pressable>

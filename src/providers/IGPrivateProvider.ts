@@ -20,6 +20,7 @@ import type {
   Credentials,
   DirectMessage,
   ID,
+  Notification,
   Page,
   Post,
   StoryTray,
@@ -30,6 +31,7 @@ import { IGClient } from "./ig/client";
 import { endpoints } from "./ig/endpoints";
 import { decodeIGToken, type IGSession } from "./ig/session";
 import {
+  mapActivity,
   mapComment,
   mapConversation,
   mapFeedItems,
@@ -162,6 +164,13 @@ export class IGPrivateProvider implements SocialProvider {
       comment_text: text,
     });
     return mapComment(data?.comment ?? { text, user: { pk: this.session?.userId } });
+  }
+
+  // --- Activity --------------------------------------------------------------
+
+  async getActivity(_cursor?: string): Promise<Page<Notification>> {
+    const data = await this.client.get<any>(endpoints.newsInbox);
+    return { items: mapActivity(data), nextCursor: undefined };
   }
 
   // --- Direct messages -------------------------------------------------------

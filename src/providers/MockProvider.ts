@@ -24,6 +24,8 @@ import type {
   Credentials,
   DirectMessage,
   ID,
+  Notification,
+  NotificationKind,
   Page,
   Post,
   StoryTray,
@@ -217,6 +219,28 @@ export class MockProvider implements SocialProvider {
       likedByMe: false,
       createdAt: new Date(1_700_000_000_000).toISOString(),
     };
+  }
+
+  async getActivity(cursor?: string): Promise<Page<Notification>> {
+    const kinds: NotificationKind[] = ["like", "follow", "comment", "mention"];
+    return paginate((n) => {
+      const kind = kinds[n % kinds.length];
+      const texts: Record<NotificationKind, string> = {
+        like: "liked your photo.",
+        follow: "started following you.",
+        comment: 'commented: "So good 🐝"',
+        mention: "mentioned you in a comment.",
+      };
+      return {
+        id: `n_${n}`,
+        kind,
+        actor: user(n + 1),
+        text: texts[kind],
+        postThumbUrl: kind === "follow" ? undefined : `https://picsum.photos/seed/wax${n}/200/200`,
+        createdAt: new Date(1_700_000_000_000 - n * 3_600_000).toISOString(),
+        isFollowingActor: n % 3 === 0,
+      };
+    }, cursor);
   }
 
   async getConversations(cursor?: string): Promise<Page<Conversation>> {

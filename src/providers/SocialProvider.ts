@@ -21,6 +21,7 @@ import type {
   Credentials,
   DirectMessage,
   ID,
+  Notification,
   Page,
   Post,
   StoryTray,
@@ -54,6 +55,9 @@ export interface SocialProvider {
   setSave(postId: ID, save: boolean): Promise<void>;
   getComments(postId: ID, cursor?: string): Promise<Page<Comment>>;
   addComment(postId: ID, text: string): Promise<Comment>;
+
+  // --- Activity ---
+  getActivity(cursor?: string): Promise<Page<Notification>>;
 
   // --- Direct messages ---
   getConversations(cursor?: string): Promise<Page<Conversation>>;

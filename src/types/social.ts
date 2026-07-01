@@ -83,6 +83,22 @@ export interface StoryTray {
   seen: boolean;
 }
 
+export type NotificationKind = "like" | "follow" | "comment" | "mention";
+
+/** An item in the Activity feed (someone liked/followed/commented). */
+export interface Notification {
+  id: ID;
+  kind: NotificationKind;
+  actor: User;
+  /** Comment text or custom copy, when relevant. */
+  text?: string;
+  /** Thumbnail of the post a like/comment refers to. */
+  postThumbUrl?: string;
+  createdAt: string;
+  /** For follow rows: drives the Follow/Following button state. */
+  isFollowingActor?: boolean;
+}
+
 export interface Conversation {
   id: ID;
   participants: User[];

@@ -65,6 +65,7 @@ export const endpoints = {
   addComment: (mediaId: string) => `${IG_API_BASE}/media/${mediaId}/comment/`,
   follow: (userId: string) => `${IG_API_BASE}/friendships/create/${userId}/`,
   unfollow: (userId: string) => `${IG_API_BASE}/friendships/destroy/${userId}/`,
+  newsInbox: `${IG_API_BASE}/news/inbox/`, // activity feed (likes/follows/comments)
   inbox: `${IG_API_BASE}/direct_v2/inbox/`,
   thread: (threadId: string) => `${IG_API_BASE}/direct_v2/threads/${threadId}/`,
 } as const;

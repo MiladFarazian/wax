@@ -13,6 +13,8 @@ import type {
   Comment,
   Conversation,
   MediaItem,
+  Notification,
+  NotificationKind,
   Post,
   StoryTray,
   User,
@@ -133,6 +135,40 @@ export function mapComment(raw: any): Comment {
     likedByMe: !!raw?.has_liked_comment,
     createdAt: new Date((raw?.created_at ?? 0) * 1000).toISOString(),
   };
+}
+
+/**
+ * Map IG's news/inbox "stories" into Wax Notifications. The payload is deeply
+ * nested and undocumented; we read defensively and skip anything we can't parse
+ * (MUST be validated live — OPEN-QUESTIONS #5). IG encodes the kind in a numeric
+ * `story_type`; we map the common ones and fall back to a like.
+ */
+export function mapActivity(raw: any): Notification[] {
+  const stories: any[] = [...(raw?.new_stories ?? []), ...(raw?.old_stories ?? [])];
+  return stories
+    .map((s): Notification | null => {
+      const args = s?.args ?? {};
+      const actorRaw = args?.profile_id
+        ? { pk: args.profile_id, username: args.profile_name, profile_pic_url: args.profile_image }
+        : args?.links?.[0];
+      if (!actorRaw) return null;
+      const kind = ((): NotificationKind => {
+        const t = String(args?.story_type ?? "");
+        if (t.includes("follow")) return "follow";
+        if (t.includes("comment")) return "comment";
+        if (t.includes("mention") || t.includes("tag")) return "mention";
+        return "like";
+      })();
+      return {
+        id: String(s?.pk ?? args?.timestamp ?? ""),
+        kind,
+        actor: mapUser(actorRaw),
+        text: args?.text || undefined,
+        postThumbUrl: args?.media?.[0]?.image || undefined,
+        createdAt: new Date((args?.timestamp ?? 0) * 1000).toISOString(),
+      };
+    })
+    .filter((n): n is Notification => n != null);
 }
 
 export function mapConversation(raw: any): Conversation {

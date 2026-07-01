@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { getProvider } from "@/providers";
-import type { Comment, DirectMessage, ID, Page, Post } from "@/types/social";
+import type { Comment, DirectMessage, ID, Notification, Page, Post } from "@/types/social";
 
 export function useFeed() {
   return useInfiniteQuery({
@@ -32,6 +32,15 @@ export function useProfile(userId: ID) {
   return useQuery({
     queryKey: ["profile", userId],
     queryFn: () => getProvider().getProfile(userId),
+  });
+}
+
+export function useActivity() {
+  return useInfiniteQuery({
+    queryKey: ["activity"],
+    queryFn: ({ pageParam }) => getProvider().getActivity(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: Page<Notification>) => last.nextCursor,
   });
 }
 
