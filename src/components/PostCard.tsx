@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
 import { useToggleLike } from "@/lib/hooks";
@@ -27,8 +28,10 @@ const DOUBLE_TAP_MS = 280;
  */
 function PostCardImpl({ post }: { post: Post }) {
   const c = useIG();
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const toggleLike = useToggleLike();
+  const openComments = () => router.push(`/comments/${post.id}`);
   const media = post.media;
   const isCarousel = post.kind === "carousel" || media.length > 1;
   const isVideo = media[0]?.kind === "video";
@@ -145,7 +148,9 @@ function PostCardImpl({ post }: { post: Post }) {
             color={post.likedByMe ? c.like : c.icon}
           />
         </Pressable>
-        <Ionicons name="chatbubble-outline" size={25} color={c.icon} style={styles.action} />
+        <Pressable hitSlop={8} onPress={openComments} style={styles.action}>
+          <Ionicons name="chatbubble-outline" size={25} color={c.icon} />
+        </Pressable>
         <Ionicons name="paper-plane-outline" size={25} color={c.icon} style={styles.action} />
         <View style={{ flex: 1 }} />
         <Ionicons name={post.savedByMe ? "bookmark" : "bookmark-outline"} size={25} color={c.icon} />
@@ -161,7 +166,7 @@ function PostCardImpl({ post }: { post: Post }) {
           </Text>
         ) : null}
         {post.commentCount > 0 ? (
-          <Text style={[styles.comments, { color: c.secondary }]}>
+          <Text style={[styles.comments, { color: c.secondary }]} onPress={openComments}>
             View all {post.commentCount.toLocaleString()} comments
           </Text>
         ) : null}

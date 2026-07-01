@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { getProvider } from "@/providers";
-import type { ID, Page, Post } from "@/types/social";
+import type { Comment, ID, Page, Post } from "@/types/social";
 
 export function useFeed() {
   return useInfiniteQuery({
@@ -32,6 +32,30 @@ export function useProfile(userId: ID) {
   return useQuery({
     queryKey: ["profile", userId],
     queryFn: () => getProvider().getProfile(userId),
+  });
+}
+
+export function useComments(postId: ID) {
+  return useInfiniteQuery({
+    queryKey: ["comments", postId],
+    queryFn: ({ pageParam }) => getProvider().getComments(postId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: Page<Comment>) => last.nextCursor,
+  });
+}
+
+/** Post a comment; optimistically prepends it to the cached first page. */
+export function useAddComment(postId: ID) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) => getProvider().addComment(postId, text),
+    onSuccess: (comment) => {
+      qc.setQueryData(["comments", postId], (data: any) => {
+        if (!data?.pages?.length) return data;
+        const [first, ...rest] = data.pages;
+        return { ...data, pages: [{ ...first, items: [comment, ...first.items] }, ...rest] };
+      });
+    },
   });
 }
 
