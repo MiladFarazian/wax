@@ -13,6 +13,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { FeedVideo } from "@/components/FeedVideo";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
 import { useToggleLike, useToggleSave } from "@/lib/hooks";
@@ -57,7 +58,7 @@ const DOUBLE_TAP_MS = 280;
  * heart burst, the heart/comment/share + bookmark row, likes, caption, comments,
  * and a relative timestamp. There is no Reels variant — Wax never renders Reels.
  */
-function PostCardImpl({ post }: { post: Post }) {
+function PostCardImpl({ post, active = false }: { post: Post; active?: boolean }) {
   const c = useIG();
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -134,20 +135,18 @@ function PostCardImpl({ post }: { post: Post }) {
             ))}
           </ScrollView>
         ) : (
-          <TappableMedia media={media[0]} size={width} recyclingKey={post.id} onDoubleTap={onDoubleTap} />
+          <TappableMedia
+            media={media[0]}
+            size={width}
+            recyclingKey={post.id}
+            onDoubleTap={onDoubleTap}
+            active={isVideo && active}
+          />
         )}
 
         {isCarousel ? (
           <View style={styles.countBadge} pointerEvents="none">
             <Text style={styles.countText}>{index + 1}/{media.length}</Text>
-          </View>
-        ) : null}
-
-        {isVideo && !isCarousel ? (
-          <View style={styles.overlayCenter} pointerEvents="none">
-            <View style={styles.playCircle}>
-              <Ionicons name="play" size={26} color="#fff" style={{ marginLeft: 3 }} />
-            </View>
           </View>
         ) : null}
 
@@ -215,11 +214,13 @@ function TappableMedia({
   size,
   recyclingKey,
   onDoubleTap,
+  active = false,
 }: {
   media?: MediaItem;
   size: number;
   recyclingKey: string;
   onDoubleTap: () => void;
+  active?: boolean;
 }) {
   const lastTap = useRef(0);
   const onPress = () => {
@@ -231,16 +232,21 @@ function TappableMedia({
       lastTap.current = now;
     }
   };
+  const isVideo = media?.kind === "video" && !!media.videoUrl;
   return (
     <Pressable onPress={onPress} style={{ width: size, height: size }}>
-      <Image
-        source={media?.url}
-        placeholder={media?.blurhash}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        transition={120}
-        recyclingKey={recyclingKey}
-      />
+      {isVideo ? (
+        <FeedVideo uri={media!.videoUrl!} poster={media!.url} active={active} />
+      ) : (
+        <Image
+          source={media?.url}
+          placeholder={media?.blurhash}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={120}
+          recyclingKey={recyclingKey}
+        />
+      )}
     </Pressable>
   );
 }
@@ -271,14 +277,6 @@ const styles = StyleSheet.create({
   },
   countText: { color: "#fff", fontSize: 12, fontWeight: "600" },
   overlayCenter: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
-  playCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   burstHeart: {
     textShadowColor: "rgba(0,0,0,0.25)",
     textShadowOffset: { width: 0, height: 1 },

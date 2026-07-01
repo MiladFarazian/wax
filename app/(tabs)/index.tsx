@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
@@ -28,6 +28,14 @@ export default function HomeFeed() {
     [feed.data],
   );
 
+  // Autoplay the video that's most in view (like IG); pause the rest.
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: any[] }) => {
+    const vid = viewableItems.find((v) => v.isViewable && v.item?.media?.[0]?.kind === "video");
+    setActiveId(vid?.item?.id ?? null);
+  }).current;
+
   return (
     <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       {/* Top bar */}
@@ -51,8 +59,10 @@ export default function HomeFeed() {
         <FlashList
           data={posts}
           keyExtractor={(p) => p.id}
-          renderItem={({ item }) => <PostCard post={item} />}
+          renderItem={({ item }) => <PostCard post={item} active={item.id === activeId} />}
           estimatedItemSize={560}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
           onEndReachedThreshold={0.6}
           onEndReached={() => feed.hasNextPage && feed.fetchNextPage()}
           refreshing={feed.isRefetching && !feed.isFetchingNextPage}
