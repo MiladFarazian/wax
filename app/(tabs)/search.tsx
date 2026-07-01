@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFeed } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
@@ -15,6 +16,7 @@ import type { Post } from "@/types/social";
  */
 export default function Search() {
   const c = useIG();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState("");
   const feed = useFeed();
@@ -46,24 +48,26 @@ export default function Search() {
         estimatedItemSize={130}
         onEndReachedThreshold={0.6}
         onEndReached={() => feed.hasNextPage && feed.fetchNextPage()}
-        renderItem={({ item }) => <ExploreTile post={item} />}
+        renderItem={({ item }) => (
+          <ExploreTile post={item} onPress={() => router.push(`/post/${item.id}`)} />
+        )}
       />
     </View>
   );
 }
 
-function ExploreTile({ post }: { post: Post }) {
+function ExploreTile({ post, onPress }: { post: Post; onPress: () => void }) {
   const isCarousel = post.kind === "carousel" || post.media.length > 1;
   const isVideo = post.media[0]?.kind === "video";
   return (
-    <View style={styles.tile}>
+    <Pressable style={styles.tile} onPress={onPress}>
       <Image source={post.media[0]?.url} style={styles.tileImg} contentFit="cover" recyclingKey={post.id} />
       {isCarousel ? (
         <Ionicons name="copy" size={16} color="#fff" style={styles.tileIcon} />
       ) : isVideo ? (
         <Ionicons name="play" size={16} color="#fff" style={styles.tileIcon} />
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 

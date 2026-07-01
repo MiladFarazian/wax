@@ -52,7 +52,9 @@ export default function Profile() {
         numColumns={3}
         keyExtractor={(p) => p.id}
         estimatedItemSize={130}
-        renderItem={({ item }) => <GridTile post={item} secondary={c.secondary} />}
+        renderItem={({ item }) => (
+          <GridTile post={item} onPress={() => router.push(`/post/${item.id}`)} />
+        )}
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.headerRow}>
@@ -91,18 +93,18 @@ export default function Profile() {
   );
 }
 
-function GridTile({ post, secondary }: { post: Post; secondary: string }) {
+function GridTile({ post, onPress }: { post: Post; onPress: () => void }) {
   const isCarousel = post.kind === "carousel" || post.media.length > 1;
   const isVideo = post.media[0]?.kind === "video";
   return (
-    <View style={styles.tile}>
+    <Pressable style={styles.tile} onPress={onPress}>
       <Image source={post.media[0]?.url} style={styles.tileImg} contentFit="cover" recyclingKey={post.id} />
       {isCarousel ? (
         <Ionicons name="copy" size={16} color="#fff" style={styles.tileIcon} />
       ) : isVideo ? (
         <Ionicons name="play" size={16} color="#fff" style={styles.tileIcon} />
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
