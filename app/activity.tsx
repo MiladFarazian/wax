@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StateView } from "@/components/StateView";
 import { useActivity } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
@@ -38,6 +39,13 @@ export default function Activity() {
         estimatedItemSize={64}
         onEndReachedThreshold={0.6}
         onEndReached={() => activity.hasNextPage && activity.fetchNextPage()}
+        ListEmptyComponent={
+          activity.isPending ? (
+            <StateView loading />
+          ) : (
+            <StateView title="No activity yet" message="Likes, comments, and new followers show up here." />
+          )
+        }
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Image source={item.actor.avatarUrl} style={styles.avatar} contentFit="cover" />

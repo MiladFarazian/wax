@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StateView } from "@/components/StateView";
 import { useConversations, useProfile } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
@@ -47,6 +48,13 @@ export default function Inbox() {
         keyExtractor={(x) => x.id}
         estimatedItemSize={72}
         onEndReached={() => convos.hasNextPage && convos.fetchNextPage()}
+        ListEmptyComponent={
+          convos.isPending ? (
+            <StateView loading />
+          ) : (
+            <StateView title="No messages yet" message="Start a conversation from someone's profile." />
+          )
+        }
         renderItem={({ item }) => {
           const other = item.participants.find((p) => p.id !== "u_me") ?? item.participants[0];
           return (

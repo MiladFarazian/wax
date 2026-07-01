@@ -13,6 +13,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StateView } from "@/components/StateView";
 import { useAddComment, useComments, useProfile } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
@@ -59,6 +60,13 @@ export default function Comments() {
         onEndReachedThreshold={0.6}
         onEndReached={() => comments.hasNextPage && comments.fetchNextPage()}
         contentContainerStyle={{ paddingVertical: 8 }}
+        ListEmptyComponent={
+          comments.isPending ? (
+            <StateView loading />
+          ) : (
+            <StateView title="No comments yet" message="Be the first to comment." />
+          )
+        }
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Image source={item.author.avatarUrl} style={styles.avatar} contentFit="cover" />
