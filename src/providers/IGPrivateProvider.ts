@@ -17,6 +17,7 @@ import type {
   AuthSession,
   Comment,
   Conversation,
+  CreatePostInput,
   Credentials,
   DirectMessage,
   ID,
@@ -95,6 +96,15 @@ export class IGPrivateProvider implements SocialProvider {
   }
 
   // --- Feed (Reels stripped in mapFeedItems) ---------------------------------
+
+  /**
+   * Posting isn't implemented yet. Real IG photo upload is a multi-step signed
+   * flow (rupload_igphoto → configure) that must be built and validated on a
+   * device before enabling (Phase 2). Fail loudly rather than pretend.
+   */
+  async createPost(_input: CreatePostInput): Promise<Post> {
+    throw new SocialProviderError("Posting isn't supported yet on Instagram.", "upstream_changed");
+  }
 
   async getFeed(cursor?: string): Promise<Page<Post>> {
     const url = cursor

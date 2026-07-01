@@ -35,6 +35,7 @@ function AuthGate() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="login" />
       <Stack.Screen name="story/[id]" options={{ presentation: "fullScreenModal", animation: "fade" }} />
+      <Stack.Screen name="create" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

@@ -133,3 +133,10 @@ export interface Credentials {
   username: string;
   password: string;
 }
+
+/** Input for creating a single-photo post. */
+export interface CreatePostInput {
+  /** Local file URI of the picked image. */
+  imageUri: string;
+  caption: string;
+}

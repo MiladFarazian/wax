@@ -10,7 +10,15 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { getProvider } from "@/providers";
-import type { Comment, DirectMessage, ID, Notification, Page, Post } from "@/types/social";
+import type {
+  Comment,
+  CreatePostInput,
+  DirectMessage,
+  ID,
+  Notification,
+  Page,
+  Post,
+} from "@/types/social";
 
 export function useFeed() {
   return useInfiniteQuery({
@@ -18,6 +26,21 @@ export function useFeed() {
     queryFn: ({ pageParam }) => getProvider().getFeed(pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last: Page<Post>) => last.nextCursor,
+  });
+}
+
+/** Create a post; on success prepends it to the cached feed so it shows at top. */
+export function useCreatePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreatePostInput) => getProvider().createPost(input),
+    onSuccess: (post) => {
+      qc.setQueryData(["feed"], (data: any) => {
+        if (!data?.pages?.length) return data;
+        const [first, ...rest] = data.pages;
+        return { ...data, pages: [{ ...first, items: [post, ...first.items] }, ...rest] };
+      });
+    },
   });
 }
 

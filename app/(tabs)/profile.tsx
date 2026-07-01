@@ -39,7 +39,9 @@ export default function Profile() {
           <Ionicons name="chevron-down" size={16} color={c.icon} />
         </View>
         <View style={styles.topIcons}>
-          <Ionicons name="add-circle-outline" size={26} color={c.icon} />
+          <Pressable hitSlop={8} onPress={() => router.push("/create")}>
+            <Ionicons name="add-circle-outline" size={26} color={c.icon} />
+          </Pressable>
           {/* Placeholder for IG's settings sheet — sign-out lives here for now. */}
           <Pressable hitSlop={8} onPress={signOut}>
             <Ionicons name="menu" size={26} color={c.icon} />

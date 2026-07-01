@@ -18,6 +18,7 @@ import type {
   AuthSession,
   Comment,
   Conversation,
+  CreatePostInput,
   Credentials,
   DirectMessage,
   ID,
@@ -41,6 +42,8 @@ export interface SocialProvider {
 
   // --- Feed (photos / videos / carousels only — never Reels) ---
   getFeed(cursor?: string): Promise<Page<Post>>;
+  /** Create a single-photo post from a local image URI. */
+  createPost(input: CreatePostInput): Promise<Post>;
 
   // --- Stories ---
   getStoryTrays(): Promise<StoryTray[]>;

@@ -21,6 +21,7 @@ import type {
   AuthSession,
   Comment,
   Conversation,
+  CreatePostInput,
   Credentials,
   DirectMessage,
   ID,
@@ -135,6 +136,7 @@ function paginate<T>(make: (n: number) => T, cursor?: string): Page<T> {
 export class MockProvider implements SocialProvider {
   readonly name = "mock";
   private currentUserId: ID | null = null;
+  private newPostSeq = 0;
 
   async login(_credentials: Credentials): Promise<AuthSession> {
     this.currentUserId = ME.id;
@@ -159,6 +161,21 @@ export class MockProvider implements SocialProvider {
     await simulateFeed();
     if (SIMULATE === "empty") return { items: [], nextCursor: undefined };
     return paginate(post, cursor);
+  }
+
+  async createPost({ imageUri, caption }: CreatePostInput): Promise<Post> {
+    return {
+      id: `p_new_${++this.newPostSeq}`,
+      author: ME,
+      kind: "image",
+      media: [{ url: imageUri, kind: "image", width: 1080, height: 1080 }],
+      caption,
+      likeCount: 0,
+      commentCount: 0,
+      likedByMe: false,
+      savedByMe: false,
+      createdAt: new Date().toISOString(),
+    };
   }
 
   async getStoryTrays(): Promise<StoryTray[]> {
