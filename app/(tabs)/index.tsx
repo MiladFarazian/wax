@@ -100,6 +100,7 @@ function StoryRail({
   separator: string;
   textColor: string;
 }) {
+  const router = useRouter();
   return (
     <View style={[styles.rail, { borderBottomColor: separator }]}>
       <FlashList
@@ -110,12 +111,12 @@ function StoryRail({
         estimatedItemSize={76}
         ListHeaderComponent={<YourStory avatar={myAvatar} textColor={textColor} />}
         renderItem={({ item }) => (
-          <View style={styles.story}>
+          <Pressable style={styles.story} onPress={() => router.push(`/story/${item.user.id}`)}>
             <StoryRing uri={item.user.avatarUrl} seen={item.seen} />
             <Text numberOfLines={1} style={[styles.storyName, { color: textColor }]}>
               {item.user.username}
             </Text>
-          </View>
+          </Pressable>
         )}
       />
     </View>
