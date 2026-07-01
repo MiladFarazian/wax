@@ -39,6 +39,7 @@ export const theme = {
     muted: palette.mutedLight,
     accent: palette.honey,
     hairline: palette.hairline,
+    danger: palette.danger,
   },
   dark: {
     bg: palette.waxNightBg,
@@ -47,6 +48,7 @@ export const theme = {
     muted: palette.mutedDark,
     accent: palette.amber,
     hairline: palette.hairlineDark,
+    danger: palette.danger,
   },
 } as const;
 

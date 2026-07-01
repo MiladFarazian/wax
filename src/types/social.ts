@@ -34,8 +34,12 @@ export interface UserProfile extends User {
 export type MediaKind = "image" | "video" | "carousel";
 
 export interface MediaItem {
+  /** Always a still image URL (the photo, or a video's cover) so any surface can
+   *  render instantly. For video, `videoUrl` carries the playable source. */
   url: string;
   kind: "image" | "video";
+  /** Playable source, present only when kind === "video". */
+  videoUrl?: string;
   width?: number;
   height?: number;
   /** Tiny blur placeholder for instant, calm image loads. */

@@ -1,18 +1,20 @@
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useConversations } from "@/lib/hooks";
-import { useTheme } from "@/theme/useTheme";
-import { spacing, type } from "@/theme/tokens";
+import { useConversations, useProfile } from "@/lib/hooks";
+import { useIG } from "@/theme/ig";
+import { timeAgo } from "@/lib/time";
 import type { Conversation } from "@/types/social";
 
-/** Direct messages inbox — IG-style conversation list (docs/SPRINT.md §3.3). */
+/** Direct messages — Instagram's DM inbox, mirrored (SPRINT §3.3). */
 export default function Inbox() {
-  const c = useTheme();
+  const c = useIG();
   const insets = useSafeAreaInsets();
   const convos = useConversations();
+  const me = useProfile("u_me");
 
   const items = useMemo<Conversation[]>(
     () => convos.data?.pages.flatMap((p) => p.items) ?? [],
@@ -21,7 +23,23 @@ export default function Inbox() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-      <Text style={[type.title, { color: c.text, padding: spacing.md }]}>Messages</Text>
+      {/* Header */}
+      <View style={styles.topBar}>
+        <View style={styles.nameRow}>
+          <Text style={[styles.title, { color: c.text }]}>{me.data?.username ?? "you"}</Text>
+          <Ionicons name="chevron-down" size={16} color={c.icon} />
+        </View>
+        <Ionicons name="create-outline" size={26} color={c.icon} />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <View style={[styles.field, { backgroundColor: c.inputBg }]}>
+          <Ionicons name="search" size={17} color={c.secondary} />
+          <TextInput placeholder="Search" placeholderTextColor={c.secondary} style={[styles.input, { color: c.text }]} />
+        </View>
+      </View>
+
       <FlashList
         data={items}
         keyExtractor={(x) => x.id}
@@ -33,12 +51,24 @@ export default function Inbox() {
             <View style={styles.row}>
               <Image source={other.avatarUrl} style={styles.avatar} contentFit="cover" />
               <View style={{ flex: 1 }}>
-                <Text style={[type.label, { color: c.text }]}>{other.username}</Text>
-                <Text numberOfLines={1} style={[type.caption, { color: c.muted }]}>
-                  {item.lastMessagePreview}
+                <Text style={[styles.name, { color: c.text, fontWeight: item.unread ? "600" : "400" }]}>
+                  {other.username}
                 </Text>
+                <View style={styles.previewRow}>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.preview,
+                      { color: item.unread ? c.text : c.secondary, fontWeight: item.unread ? "500" : "400", flexShrink: 1 },
+                    ]}
+                  >
+                    {item.lastMessagePreview}
+                  </Text>
+                  <Text style={[styles.preview, { color: c.secondary }]}> · {timeAgo(item.updatedAt)}</Text>
+                </View>
               </View>
-              {item.unread ? <View style={[styles.dot, { backgroundColor: c.accent }]} /> : null}
+              {item.unread ? <View style={[styles.unread, { backgroundColor: c.link }]} /> : null}
+              <Ionicons name="camera-outline" size={24} color={c.icon} />
             </View>
           );
         }}
@@ -49,13 +79,28 @@ export default function Inbox() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    height: 44,
+  },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  title: { fontSize: 20, fontWeight: "700" },
+  searchWrap: { paddingHorizontal: 12, paddingBottom: 8 },
+  field: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, height: 36 },
+  input: { flex: 1, fontSize: 15, padding: 0 },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
+  avatar: { width: 56, height: 56, borderRadius: 28 },
+  name: { fontSize: 15 },
+  previewRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
+  preview: { fontSize: 14 },
+  unread: { width: 8, height: 8, borderRadius: 4 },
 });
