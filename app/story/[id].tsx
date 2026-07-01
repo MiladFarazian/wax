@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -115,6 +115,21 @@ export default function StoryViewer() {
         <Pressable style={styles.zone} onPress={goPrev} onLongPress={pause} onPressOut={resume} delayLongPress={200} />
         <Pressable style={styles.zone} onPress={goNext} onLongPress={pause} onPressOut={resume} delayLongPress={200} />
       </View>
+
+      {/* Reply bar */}
+      <View style={[styles.reply, { paddingBottom: insets.bottom + 10 }]}>
+        <View style={styles.replyField}>
+          <TextInput
+            placeholder={`Reply to ${tray?.user.username ?? ""}…`}
+            placeholderTextColor="rgba(255,255,255,0.85)"
+            style={styles.replyInput}
+            onFocus={pause}
+            onBlur={resume}
+          />
+        </View>
+        <Ionicons name="heart-outline" size={26} color="#fff" />
+        <Ionicons name="paper-plane-outline" size={26} color="#fff" />
+      </View>
     </View>
   );
 }
@@ -130,6 +145,28 @@ const styles = StyleSheet.create({
   avatar: { width: 32, height: 32, borderRadius: 16 },
   username: { color: "#fff", fontSize: 14, fontWeight: "600" },
   time: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
-  zones: { ...StyleSheet.absoluteFillObject, flexDirection: "row", top: 90 },
+  zones: { ...StyleSheet.absoluteFillObject, flexDirection: "row", top: 90, bottom: 84 },
   zone: { flex: 1 },
+  reply: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+  },
+  replyField: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.6)",
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    minHeight: 42,
+    justifyContent: "center",
+  },
+  replyInput: { color: "#fff", fontSize: 15, paddingVertical: 8 },
 });
+
