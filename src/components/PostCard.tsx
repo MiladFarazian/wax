@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { FeedVideo } from "@/components/FeedVideo";
+import { PostOptionsSheet } from "@/components/PostOptionsSheet";
 import { useIG } from "@/theme/ig";
 import { timeAgo } from "@/lib/time";
 import { useToggleLike, useToggleSave } from "@/lib/hooks";
@@ -64,6 +65,7 @@ function PostCardImpl({ post, active = false }: { post: Post; active?: boolean }
   const { width } = useWindowDimensions();
   const toggleLike = useToggleLike();
   const toggleSave = useToggleSave();
+  const [menuOpen, setMenuOpen] = useState(false);
   const openComments = () => router.push(`/comments/${post.id}`);
   const media = post.media;
   const isCarousel = post.kind === "carousel" || media.length > 1;
@@ -117,8 +119,16 @@ function PostCardImpl({ post, active = false }: { post: Post; active?: boolean }
           </View>
           {post.isSponsored ? <Text style={[styles.sub, { color: c.secondary }]}>Sponsored</Text> : null}
         </View>
-        <Ionicons name="ellipsis-horizontal" size={20} color={c.icon} />
+        <Pressable hitSlop={8} onPress={() => setMenuOpen(true)}>
+          <Ionicons name="ellipsis-horizontal" size={20} color={c.icon} />
+        </Pressable>
       </View>
+
+      <PostOptionsSheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        username={post.author.username}
+      />
 
       {/* Media */}
       <View style={[styles.mediaWrap, { width, height: width }]}>
