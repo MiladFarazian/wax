@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PostCard } from "@/components/PostCard";
 import { StoryRing } from "@/components/StoryRing";
 import { StateView } from "@/components/StateView";
+import { FeedSkeleton } from "@/components/PostSkeleton";
 import { useFeed, useProfile, useStoryTrays } from "@/lib/hooks";
 import { describeError } from "@/lib/errors";
 import { useIG, wordmark } from "@/theme/ig";
@@ -55,7 +56,7 @@ export default function HomeFeed() {
       </View>
 
       {feed.isPending ? (
-        <StateView loading title="Loading your feed…" />
+        <FeedSkeleton />
       ) : feed.isError ? (
         <FeedError error={feed.error} onRetry={() => feed.refetch()} />
       ) : (

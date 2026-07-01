@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { FeedVideo } from "@/components/FeedVideo";
 import { PostOptionsSheet } from "@/components/PostOptionsSheet";
@@ -52,6 +53,11 @@ function PopIcon({
 }
 
 const DOUBLE_TAP_MS = 280;
+
+/** Fire-and-forget haptic; no-ops on platforms without a Taptic engine. */
+const haptic = (style: Haptics.ImpactFeedbackStyle) => {
+  Haptics.impactAsync(style).catch(() => {});
+};
 
 /**
  * PostCard — an Instagram feed post, mirrored 1:1 (docs/SPRINT.md §4): header,
@@ -96,7 +102,10 @@ function PostCardImpl({ post, active = false }: { post: Post; active?: boolean }
   }, [scale, opacity]);
 
   const onDoubleTap = useCallback(() => {
-    if (!post.likedByMe) toggleLike.mutate({ postId: post.id, like: true });
+    if (!post.likedByMe) {
+      toggleLike.mutate({ postId: post.id, like: true });
+      haptic(Haptics.ImpactFeedbackStyle.Medium);
+    }
     burst();
   }, [post.likedByMe, post.id, toggleLike, burst]);
 
@@ -183,7 +192,10 @@ function PostCardImpl({ post, active = false }: { post: Post; active?: boolean }
           name={post.likedByMe ? "heart" : "heart-outline"}
           size={26}
           color={post.likedByMe ? c.like : c.icon}
-          onPress={() => toggleLike.mutate({ postId: post.id, like: !post.likedByMe })}
+          onPress={() => {
+            haptic(Haptics.ImpactFeedbackStyle.Light);
+            toggleLike.mutate({ postId: post.id, like: !post.likedByMe });
+          }}
         />
         <Pressable hitSlop={8} onPress={openComments} style={styles.action}>
           <Ionicons name="chatbubble-outline" size={25} color={c.icon} />
@@ -194,7 +206,10 @@ function PostCardImpl({ post, active = false }: { post: Post; active?: boolean }
           name={post.savedByMe ? "bookmark" : "bookmark-outline"}
           size={25}
           color={c.icon}
-          onPress={() => toggleSave.mutate({ postId: post.id, save: !post.savedByMe })}
+          onPress={() => {
+            haptic(Haptics.ImpactFeedbackStyle.Light);
+            toggleSave.mutate({ postId: post.id, save: !post.savedByMe });
+          }}
         />
       </View>
 

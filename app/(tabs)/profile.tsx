@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -79,6 +79,8 @@ export default function Profile() {
               <ProfileButton label="Share profile" bg={c.inputBg} text={c.text} />
             </View>
 
+            <Highlights c={c} />
+
             {/* Grid / tagged tab strip */}
             <View style={[styles.tabStrip, { borderTopColor: c.separator }]}>
               <View style={[styles.tab, { borderBottomColor: c.text }]}>
@@ -107,6 +109,41 @@ function GridTile({ post, onPress }: { post: Post; onPress: () => void }) {
         <Ionicons name="play" size={16} color="#fff" style={styles.tileIcon} />
       ) : null}
     </Pressable>
+  );
+}
+
+const HIGHLIGHTS = [
+  { id: "h1", label: "Travel", cover: "https://picsum.photos/seed/hl1/200/200" },
+  { id: "h2", label: "Food", cover: "https://picsum.photos/seed/hl2/200/200" },
+  { id: "h3", label: "Friends", cover: "https://picsum.photos/seed/hl3/200/200" },
+  { id: "h4", label: "Design", cover: "https://picsum.photos/seed/hl4/200/200" },
+];
+
+function Highlights({ c }: { c: ReturnType<typeof useIG> }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.highlights}
+      contentContainerStyle={{ gap: 18, paddingHorizontal: 16 }}
+    >
+      <View style={styles.hl}>
+        <View style={[styles.hlNew, { borderColor: c.separator }]}>
+          <Ionicons name="add" size={26} color={c.text} />
+        </View>
+        <Text style={[styles.hlLabel, { color: c.text }]}>New</Text>
+      </View>
+      {HIGHLIGHTS.map((h) => (
+        <View key={h.id} style={styles.hl}>
+          <View style={[styles.hlRing, { borderColor: c.separator }]}>
+            <Image source={h.cover} style={styles.hlCover} contentFit="cover" />
+          </View>
+          <Text numberOfLines={1} style={[styles.hlLabel, { color: c.text }]}>
+            {h.label}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 
@@ -171,6 +208,12 @@ const styles = StyleSheet.create({
   buttons: { flexDirection: "row", gap: 8, marginTop: 14 },
   button: { flex: 1, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   buttonText: { fontSize: 14, fontWeight: "600" },
+  highlights: { marginTop: 18, marginHorizontal: -16 },
+  hl: { alignItems: "center", gap: 6, width: 64 },
+  hlNew: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  hlRing: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  hlCover: { width: 54, height: 54, borderRadius: 27 },
+  hlLabel: { fontSize: 12 },
   tabStrip: {
     flexDirection: "row",
     marginTop: 18,
