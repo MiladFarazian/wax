@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useProfile } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
 
@@ -42,6 +43,11 @@ export default function TabsLayout() {
   const c = useIG();
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => {
+          Haptics.selectionAsync().catch(() => {});
+        },
+      }}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: c.icon,
