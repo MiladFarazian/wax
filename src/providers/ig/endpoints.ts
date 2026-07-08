@@ -58,6 +58,9 @@ export function appHeaders(session: IGSession): Record<string, string> {
 export const endpoints = {
   timelineFeed: `${IG_API_BASE}/feed/timeline/`,
   currentUser: `${IG_API_BASE}/accounts/current_user/?edit=true`,
+  // The web profile endpoint returns counts, HD avatar, and the first ~12 posts.
+  webProfileInfo: (username: string) =>
+    `${IG_API_BASE}/users/web_profile_info/?username=${encodeURIComponent(username)}`,
   reelsTray: `${IG_API_BASE}/feed/reels_tray/`, // stories tray (name is IG's, not Reels)
   userInfo: (userId: string) => `${IG_API_BASE}/users/${userId}/info/`,
   userFeed: (userId: string) => `${IG_API_BASE}/feed/user/${userId}/`,

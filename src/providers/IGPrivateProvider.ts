@@ -38,6 +38,8 @@ import {
   mapFeedItems,
   mapProfile,
   mapStoryTray,
+  mapWebProfile,
+  mapWebProfilePosts,
 } from "./ig/mappers";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -72,22 +74,25 @@ export class IGPrivateProvider implements SocialProvider {
     const session = decodeIGToken(token);
     if (!session?.sessionid) return null;
     this.session = session;
-    // Prefer the id from a live current_user call, but fall back to the
-    // ds_user_id cookie so a session that's valid for some endpoints still lets
-    // us in — per-call failures then surface in the UI instead of bouncing to
-    // login (which is what we want while validating the backend).
+    // Resolve the real id + username from users/{id}/info/ (a GET the web
+    // session honors). Fall back to the ds_user_id cookie so a partly-valid
+    // session still lets us in — per-call failures then surface in the UI.
     let userId = session.userId ?? "";
-    try {
-      const me = await this.client.get<any>(endpoints.currentUser);
-      userId = String(me?.user?.pk ?? me?.user?.pk_id ?? userId ?? "");
-    } catch {
-      // keep the cookie-derived userId
+    let username = session.username;
+    if (userId) {
+      try {
+        const me = await this.client.get<any>(endpoints.userInfo(userId));
+        userId = String(me?.user?.pk ?? me?.user?.pk_id ?? userId);
+        username = me?.user?.username ?? username;
+      } catch {
+        // keep the cookie-derived id
+      }
     }
     if (!userId) {
       this.session = null;
       return null;
     }
-    this.session = { ...session, userId };
+    this.session = { ...session, userId, username };
     return { userId, token, createdAt: new Date().toISOString() };
   }
 
@@ -132,15 +137,34 @@ export class IGPrivateProvider implements SocialProvider {
 
   // --- Profiles --------------------------------------------------------------
 
+  /** The username to query the web profile endpoint with (current user only). */
+  private usernameFor(userId: ID): string | undefined {
+    const isMe = userId === "u_me" || userId === this.session?.userId;
+    return isMe ? this.session?.username : undefined;
+  }
+
   async getProfile(userId: ID): Promise<UserProfile> {
-    // The UI passes the mock literal "u_me" for the current user; resolve it to
-    // the real Instagram id.
+    // web_profile_info gives counts + HD avatar + posts in one call.
+    const username = this.usernameFor(userId);
+    if (username) {
+      const data = await this.client.get<any>(endpoints.webProfileInfo(username));
+      const user = data?.data?.user;
+      if (user) return mapWebProfile(user);
+    }
+    // Fallback: users/{id}/info/ (trimmed — name/avatar but no counts).
     const id = userId === "u_me" ? (this.session?.userId ?? userId) : userId;
     const data = await this.client.get<any>(endpoints.userInfo(id));
     return mapProfile(data?.user ?? {});
   }
 
   async getUserPosts(userId: ID, cursor?: string): Promise<Page<Post>> {
+    // First page of the current user's grid comes from web_profile_info.
+    const username = this.usernameFor(userId);
+    if (username && !cursor) {
+      const data = await this.client.get<any>(endpoints.webProfileInfo(username));
+      const user = data?.data?.user;
+      if (user) return { items: mapWebProfilePosts(user), nextCursor: undefined };
+    }
     const url = cursor
       ? `${endpoints.userFeed(userId)}?max_id=${encodeURIComponent(cursor)}`
       : endpoints.userFeed(userId);

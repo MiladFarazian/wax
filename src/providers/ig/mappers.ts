@@ -96,6 +96,61 @@ export function mapFeedItems(items: any[]): Post[] {
     .filter((p): p is Post => p != null);
 }
 
+/**
+ * Map the web_profile_info response (GraphQL-ish `edge_*` shape) to a Wax
+ * UserProfile — real counts + HD avatar. Different field names than the mobile
+ * app's users/{id}/info/, hence a dedicated mapper.
+ */
+export function mapWebProfile(user: any): UserProfile {
+  return {
+    id: String(user?.id ?? user?.pk ?? ""),
+    username: user?.username ?? "",
+    fullName: user?.full_name || undefined,
+    avatarUrl: user?.profile_pic_url_hd || user?.profile_pic_url || undefined,
+    isVerified: !!user?.is_verified,
+    isPrivate: !!user?.is_private,
+    bio: user?.biography || undefined,
+    website: user?.external_url || undefined,
+    postCount: user?.edge_owner_to_timeline_media?.count ?? 0,
+    followerCount: user?.edge_followed_by?.count ?? 0,
+    followingCount: user?.edge_follow?.count ?? 0,
+  };
+}
+
+/** Map the first page of posts embedded in a web_profile_info response. */
+export function mapWebProfilePosts(user: any): Post[] {
+  const edges: any[] = user?.edge_owner_to_timeline_media?.edges ?? [];
+  return edges
+    .map((e) => e?.node)
+    .filter((n) => n && !isReel(n))
+    .map((n): Post => {
+      const isVideo = !!n?.is_video;
+      const cover = n?.display_url || n?.thumbnail_src;
+      const media: MediaItem[] = [
+        {
+          url: cover,
+          kind: isVideo ? "video" : "image",
+          ...(isVideo && n?.video_url ? { videoUrl: n.video_url } : {}),
+          width: n?.dimensions?.width,
+          height: n?.dimensions?.height,
+        },
+      ];
+      const isCarousel = n?.__typename === "GraphSidecar";
+      return {
+        id: String(n?.id ?? n?.shortcode ?? ""),
+        author: mapUser(user),
+        kind: isCarousel ? "carousel" : isVideo ? "video" : "image",
+        media,
+        caption: n?.edge_media_to_caption?.edges?.[0]?.node?.text || undefined,
+        likeCount: n?.edge_liked_by?.count ?? n?.edge_media_preview_like?.count ?? 0,
+        commentCount: n?.edge_media_to_comment?.count ?? 0,
+        likedByMe: false,
+        savedByMe: false,
+        createdAt: new Date((n?.taken_at_timestamp ?? 0) * 1000).toISOString(),
+      };
+    });
+}
+
 export function mapProfile(raw: any): UserProfile {
   return {
     ...mapUser(raw),

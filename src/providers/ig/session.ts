@@ -18,6 +18,8 @@ export interface IGSession {
   sessionid: string;
   csrftoken?: string;
   userId?: string;
+  /** Resolved after login; the web profile endpoint is keyed by username. */
+  username?: string;
 }
 
 export function encodeIGToken(session: IGSession): string {
