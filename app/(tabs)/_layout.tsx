@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter, type Href } from "expo-router";
 import { View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,16 +7,16 @@ import { useProfile } from "@/lib/hooks";
 import { useIG } from "@/theme/ig";
 
 /**
- * Bottom tab bar, mirrored from Instagram (docs/SPRINT.md §4): line icons that
- * fill when active, over a white/black bar with a hairline top border. NOTE the
- * deliberate absence of a Reels tab — Home, Search, Inbox (DMs), Profile — the
- * core of the Wax thesis (§3.3). The profile tab is the user's avatar, like IG.
+ * Bottom tab bar, mirrored from Instagram: Home · Search · Create(+) · Profile —
+ * Instagram's exact bar with the Reels tab removed (the one and only difference).
+ * DMs live top-right and slide in, like IG. Icons fill when active; the profile
+ * tab is the user's avatar.
  */
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
-function tabIcon(outline: IoniconName, filled: IoniconName) {
+function tabIcon(outline: IoniconName, filled: IoniconName, iconSize = 26) {
   return ({ color, focused, size }: { color: string; focused: boolean; size: number }) => (
-    <Ionicons name={focused ? filled : outline} size={size ?? 26} color={color} />
+    <Ionicons name={focused ? filled : outline} size={size ?? iconSize} color={color} />
   );
 }
 
@@ -41,6 +41,7 @@ function ProfileTabIcon({ color, focused }: { color: string; focused: boolean })
 
 export default function TabsLayout() {
   const c = useIG();
+  const router = useRouter();
   return (
     <Tabs
       screenListeners={{
@@ -62,8 +63,15 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ tabBarIcon: tabIcon("home-outline", "home") }} />
       <Tabs.Screen name="search" options={{ tabBarIcon: tabIcon("search-outline", "search") }} />
       <Tabs.Screen
-        name="inbox"
-        options={{ tabBarIcon: tabIcon("paper-plane-outline", "paper-plane") }}
+        name="create"
+        options={{ tabBarIcon: tabIcon("add-outline", "add", 30) }}
+        listeners={{
+          // Open the create modal instead of switching to the (empty) tab.
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push("/new-post" as Href);
+          },
+        }}
       />
       <Tabs.Screen name="profile" options={{ tabBarIcon: ProfileTabIcon }} />
     </Tabs>

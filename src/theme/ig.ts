@@ -56,9 +56,9 @@ export function useIG(): IGColors {
 export const STORY_GRADIENT = ["#feda75", "#fa7e1e", "#d62976", "#962fbf", "#4f5bd5"] as const;
 
 /**
- * The wordmark style that stands in for IG's script logo at the top of the feed.
- * We render "Wax" (never Meta's trademarked logo — docs/OPEN-QUESTIONS §G) in a
- * platform cursive so the header reads like Instagram's while staying our own.
+ * The Instagram wordmark style for the feed/login header — rendered in a
+ * platform cursive (the app presents as Instagram per the product decision;
+ * the only functional difference from Instagram is that Reels are removed).
  */
 export const wordmark = Platform.select({
   ios: { fontFamily: "Snell Roundhand", fontWeight: "700" as const },

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFeed, useProfile } from "@/lib/hooks";
 import { useAuth } from "@/lib/AuthContext";
@@ -39,7 +39,7 @@ export default function Profile() {
           <Ionicons name="chevron-down" size={16} color={c.icon} />
         </View>
         <View style={styles.topIcons}>
-          <Pressable hitSlop={8} onPress={() => router.push("/create")}>
+          <Pressable hitSlop={8} onPress={() => router.push("/new-post" as Href)}>
             <Ionicons name="add-circle-outline" size={26} color={c.icon} />
           </Pressable>
           {/* Placeholder for IG's settings sheet — sign-out lives here for now. */}

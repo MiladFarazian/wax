@@ -4,17 +4,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IGLoginWebView } from "@/components/IGLoginWebView";
 import { useAuth } from "@/lib/AuthContext";
 import { completeLogin } from "@/lib/auth";
-import { useTheme } from "@/theme/useTheme";
-import { radius, spacing, type } from "@/theme/tokens";
+import { useIG, wordmark } from "@/theme/ig";
 
 /**
- * Login — the Wax-branded shell around Instagram's own login webview.
- * Brand lives here at the edge (docs/SPRINT.md §4); the actual credential entry
- * happens on Instagram's page. We surface the account-risk disclosure up front
- * (Sprint §1) before the user connects.
+ * Login — Instagram's login screen. Authentication happens on Instagram's own
+ * page (the webview), so we never see the password; we surface the account-risk
+ * disclosure up front (SPRINT §1) before connecting.
  */
 export default function Login() {
-  const c = useTheme();
+  const c = useIG();
   const insets = useSafeAreaInsets();
   const { setStatus } = useAuth();
   const [connecting, setConnecting] = useState(false);
@@ -24,7 +22,7 @@ export default function Login() {
     const status = await completeLogin(token);
     if (status === "signed_in") setStatus("signed_in");
     else {
-      setError("Couldn't verify that session. Please try connecting again.");
+      setError("Couldn't verify that session. Please try logging in again.");
       setConnecting(false);
     }
   }
@@ -34,52 +32,46 @@ export default function Login() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top + spacing.xxl }]}>
-      <View style={styles.hero}>
-        <Text style={[type.display, { color: c.text }]}>Wax</Text>
-        <Text style={[type.body, { color: c.muted, marginTop: spacing.xs }]}>
-          Silence the noise. Keep the connection.
-        </Text>
-      </View>
-
-      <View style={[styles.card, { backgroundColor: c.card }]}>
-        <Text style={[type.title, { color: c.text }]}>Connect your Instagram</Text>
-        <Text style={[type.body, { color: c.muted, marginTop: spacing.sm }]}>
-          You'll sign in on Instagram's own page. Wax never sees your password — only a
-          session it stores securely on this device.
-        </Text>
-
-        <Text style={[type.caption, { color: c.muted, marginTop: spacing.lg }]}>
-          Wax is not affiliated with Instagram or Meta. Using a third-party client is against
-          Instagram's terms and could put your account at risk. Connect at your own discretion.
-        </Text>
-
-        {error ? (
-          <Text style={[type.caption, { color: c.danger, marginTop: spacing.md }]}>{error}</Text>
-        ) : null}
+    <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
+      <View style={styles.center}>
+        <Text style={[wordmark, styles.wordmark, { color: c.text }]}>Instagram</Text>
 
         <Pressable
-          style={[styles.button, { backgroundColor: c.accent }]}
+          style={[styles.button, { backgroundColor: c.link }]}
           onPress={() => {
             setError(null);
             setConnecting(true);
           }}
         >
-          <Text style={[type.label, { color: "#1A1814" }]}>Connect Instagram</Text>
+          <Text style={styles.buttonText}>Log in</Text>
         </Pressable>
+
+        {error ? <Text style={[styles.error, { color: c.like }]}>{error}</Text> : null}
+      </View>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <Text style={[styles.disclosure, { color: c.secondary }]}>
+          You'll sign in on Instagram's own page — your password stays on Instagram and only a
+          session is stored securely on this device. This is an unofficial client; using it is
+          against Instagram's terms and could put your account at risk.
+        </Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: spacing.lg },
-  hero: { alignItems: "center", marginBottom: spacing.xxl },
-  card: { borderRadius: radius.lg, padding: spacing.lg },
+  root: { flex: 1, paddingHorizontal: 32 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 28 },
+  wordmark: { fontSize: 52, lineHeight: 64 },
   button: {
-    marginTop: spacing.xl,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.md,
+    alignSelf: "stretch",
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: "center",
   },
+  buttonText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  error: { fontSize: 13, textAlign: "center" },
+  footer: { alignItems: "center" },
+  disclosure: { fontSize: 11, textAlign: "center", lineHeight: 16 },
 });

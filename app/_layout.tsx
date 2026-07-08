@@ -7,13 +7,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
-import { palette } from "@/theme/tokens";
+import { useIG } from "@/theme/ig";
 
 /** Redirects between the login screen and the tabs based on auth status. */
 function AuthGate() {
   const { status } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const c = useIG();
 
   useEffect(() => {
     if (status === "loading") return;
@@ -25,8 +26,8 @@ function AuthGate() {
 
   if (status === "loading") {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: palette.waxCream }}>
-        <ActivityIndicator color={palette.honey} />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.bg }}>
+        <ActivityIndicator color={c.secondary} />
       </View>
     );
   }
@@ -36,7 +37,8 @@ function AuthGate() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="login" />
       <Stack.Screen name="story/[id]" options={{ presentation: "fullScreenModal", animation: "fade" }} />
-      <Stack.Screen name="create" options={{ presentation: "modal" }} />
+      <Stack.Screen name="new-post" options={{ presentation: "modal" }} />
+      <Stack.Screen name="inbox" />
     </Stack>
   );
 }

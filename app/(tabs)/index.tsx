@@ -41,11 +41,8 @@ export default function HomeFeed() {
     <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       {/* Top bar */}
       <View style={[styles.topBar, { borderBottomColor: c.separator }]}>
-        <Text style={[wordmark, styles.wordmark, { color: c.text }]}>Wax</Text>
+        <Text style={[wordmark, styles.wordmark, { color: c.text }]}>Instagram</Text>
         <View style={styles.topIcons}>
-          <Pressable hitSlop={8} onPress={() => router.push("/create")}>
-            <Ionicons name="add-circle-outline" size={27} color={c.icon} />
-          </Pressable>
           <Pressable hitSlop={8} onPress={() => router.push("/activity")}>
             <Ionicons name="heart-outline" size={26} color={c.icon} />
           </Pressable>

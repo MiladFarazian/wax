@@ -29,6 +29,9 @@ export default function Inbox() {
       {/* Header */}
       <View style={styles.topBar}>
         <View style={styles.nameRow}>
+          <Pressable onPress={() => router.back()} hitSlop={10}>
+            <Ionicons name="chevron-back" size={26} color={c.icon} />
+          </Pressable>
           <Text style={[styles.title, { color: c.text }]}>{me.data?.username ?? "you"}</Text>
           <Ionicons name="chevron-down" size={16} color={c.icon} />
         </View>
