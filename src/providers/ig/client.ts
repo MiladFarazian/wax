@@ -71,23 +71,31 @@ export class IGClient {
       throw new SocialProviderError("Network request failed", "network", cause);
     }
 
-    if (res.status === 429) {
-      throw new SocialProviderError("Rate limited by Instagram", "rate_limited");
-    }
-    if (res.status === 401 || res.status === 403) {
-      // A previously-valid session being rejected usually means a checkpoint /
-      // flag on the account — surface it distinctly so the UI can warn the user.
-      throw new SocialProviderError("Session rejected (possible checkpoint)", "account_flagged");
-    }
-    if (!res.ok) {
-      throw new SocialProviderError(`Instagram returned ${res.status}`, "upstream_changed");
+    // Read the body once as text so we can both classify errors and parse JSON.
+    const body = await res.text().catch(() => "");
+    if (__DEV__) console.log(`[IG] ${res.status} ${url} — ${body.slice(0, 200)}`);
+
+    if (res.ok) {
+      try {
+        return JSON.parse(body) as T;
+      } catch (cause) {
+        throw new SocialProviderError("Unexpected response shape", "upstream_changed", cause);
+      }
     }
 
-    try {
-      return (await res.json()) as T;
-    } catch (cause) {
-      // A non-JSON body where JSON was expected usually means IG changed the API.
-      throw new SocialProviderError("Unexpected response shape", "upstream_changed", cause);
+    const lower = body.toLowerCase();
+
+    if (res.status === 429 || lower.includes("please wait") || lower.includes("feedback_required")) {
+      throw new SocialProviderError("Instagram is rate-limiting requests", "rate_limited");
     }
+    // A real security wall on the account (distinct from a stale session).
+    if (lower.includes("checkpoint") || lower.includes("challenge")) {
+      throw new SocialProviderError("Instagram needs you to verify this account", "account_flagged");
+    }
+    // login_required / session_expired: the session isn't valid here — not a ban.
+    if (res.status === 401 || res.status === 403 || lower.includes("login_required")) {
+      throw new SocialProviderError("Your Instagram session isn't valid — log in again", "auth_failed");
+    }
+    throw new SocialProviderError(`Instagram returned ${res.status}`, "upstream_changed");
   }
 }

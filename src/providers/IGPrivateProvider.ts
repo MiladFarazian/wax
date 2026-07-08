@@ -70,21 +70,25 @@ export class IGPrivateProvider implements SocialProvider {
    */
   async restoreSession(token: string): Promise<AuthSession | null> {
     const session = decodeIGToken(token);
-    if (!session) return null;
+    if (!session?.sessionid) return null;
     this.session = session;
+    // Prefer the id from a live current_user call, but fall back to the
+    // ds_user_id cookie so a session that's valid for some endpoints still lets
+    // us in — per-call failures then surface in the UI instead of bouncing to
+    // login (which is what we want while validating the backend).
+    let userId = session.userId ?? "";
     try {
       const me = await this.client.get<any>(endpoints.currentUser);
-      const userId = String(me?.user?.pk ?? me?.user?.pk_id ?? session.userId ?? "");
-      if (!userId) {
-        this.session = null;
-        return null;
-      }
-      this.session = { ...session, userId };
-      return { userId, token, createdAt: new Date().toISOString() };
+      userId = String(me?.user?.pk ?? me?.user?.pk_id ?? userId ?? "");
     } catch {
+      // keep the cookie-derived userId
+    }
+    if (!userId) {
       this.session = null;
       return null;
     }
+    this.session = { ...session, userId };
+    return { userId, token, createdAt: new Date().toISOString() };
   }
 
   async logout(): Promise<void> {
@@ -107,10 +111,11 @@ export class IGPrivateProvider implements SocialProvider {
   }
 
   async getFeed(cursor?: string): Promise<Page<Post>> {
-    const url = cursor
-      ? `${endpoints.timelineFeed}?max_id=${encodeURIComponent(cursor)}`
-      : endpoints.timelineFeed;
-    const data = await this.client.get<any>(url);
+    // The web timeline is a POST (a GET just returns the web page shell).
+    const data = await this.client.post<any>(endpoints.timelineFeed, {
+      reason: cursor ? "pagination" : "cold_start_fetch",
+      ...(cursor ? { max_id: cursor } : {}),
+    });
     return {
       items: mapFeedItems(data?.feed_items ?? data?.items ?? []),
       nextCursor: data?.next_max_id || undefined,
@@ -120,14 +125,18 @@ export class IGPrivateProvider implements SocialProvider {
   // --- Stories ---------------------------------------------------------------
 
   async getStoryTrays(): Promise<StoryTray[]> {
-    const data = await this.client.get<any>(endpoints.reelsTray);
+    // Stories tray is also a POST on the web.
+    const data = await this.client.post<any>(endpoints.reelsTray, { reason: "cold_start" });
     return (data?.tray ?? []).map(mapStoryTray);
   }
 
   // --- Profiles --------------------------------------------------------------
 
   async getProfile(userId: ID): Promise<UserProfile> {
-    const data = await this.client.get<any>(endpoints.userInfo(userId));
+    // The UI passes the mock literal "u_me" for the current user; resolve it to
+    // the real Instagram id.
+    const id = userId === "u_me" ? (this.session?.userId ?? userId) : userId;
+    const data = await this.client.get<any>(endpoints.userInfo(id));
     return mapProfile(data?.user ?? {});
   }
 

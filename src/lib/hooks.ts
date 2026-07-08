@@ -29,6 +29,17 @@ export function useFeed() {
   });
 }
 
+/** A specific user's posts (their profile grid). Disabled until we have an id. */
+export function useUserPosts(userId?: ID) {
+  return useInfiniteQuery({
+    queryKey: ["userPosts", userId],
+    enabled: !!userId,
+    queryFn: ({ pageParam }) => getProvider().getUserPosts(userId as ID, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: Page<Post>) => last.nextCursor,
+  });
+}
+
 /** Create a post; on success prepends it to the cached feed so it shows at top. */
 export function useCreatePost() {
   const qc = useQueryClient();

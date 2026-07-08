@@ -14,21 +14,21 @@
 
 import type { IGSession } from "./session";
 
-export const IG_API_BASE = "https://i.instagram.com/api/v1";
 export const IG_WEB_BASE = "https://www.instagram.com";
+// We capture a WEB session (login on www.instagram.com), so we talk to the web
+// API host, not the mobile app host (i.instagram.com). A web session gets
+// login_required on the mobile app endpoints; the web host honors it.
+export const IG_API_BASE = `${IG_WEB_BASE}/api/v1`;
 
 /** Login page Wax loads in a webview so the user authenticates on IG directly. */
 export const IG_LOGIN_URL = `${IG_WEB_BASE}/accounts/login/`;
 
 /**
- * Headers that make a request look like the official app rather than a scraper.
- * The User-Agent string encodes app version + device; a realistic, stable value
- * lowers flag risk. Placeholder values here — finalize against a current app
- * build before production.
- *
- * The Cookie header carries the full session (sessionid + csrftoken + ds_user_id)
- * because IG's write endpoints validate the csrftoken cookie against the
- * X-CSRFToken header. Reads work with sessionid alone; writes need all three.
+ * Headers matching the WEB client, so they're consistent with the web session
+ * we captured. The web API authenticates via the sessionid cookie + the web
+ * X-IG-App-ID + a matching browser User-Agent; X-CSRFToken is required on writes.
+ * (The mobile-app UA + X-IG-Capabilities would contradict a web session and
+ * trigger login_required.)
  */
 export function appHeaders(session: IGSession): Record<string, string> {
   const cookie = [
@@ -41,10 +41,14 @@ export function appHeaders(session: IGSession): Record<string, string> {
 
   const headers: Record<string, string> = {
     "User-Agent":
-      "Instagram 309.0.0.40.113 Android (33/13; 420dpi; 1080x2210; Wax; device; en_US)",
-    "X-IG-App-ID": "936619743392459", // public web app id used by IG web
-    "X-IG-Capabilities": "3brTvw==",
-    "Accept-Language": "en-US",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "X-IG-App-ID": "936619743392459", // Instagram web app id
+    "X-Requested-With": "XMLHttpRequest",
+    "X-ASBD-ID": "129477",
+    Referer: `${IG_WEB_BASE}/`,
+    Origin: IG_WEB_BASE,
+    Accept: "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
     Cookie: cookie,
   };
   if (session.csrftoken) headers["X-CSRFToken"] = session.csrftoken;

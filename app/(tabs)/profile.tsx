@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFeed, useProfile } from "@/lib/hooks";
+import { useProfile, useUserPosts } from "@/lib/hooks";
 import { useAuth } from "@/lib/AuthContext";
 import { useIG } from "@/theme/ig";
 import type { Post } from "@/types/social";
@@ -22,11 +22,11 @@ export default function Profile() {
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
   const profile = useProfile("u_me");
-  const feed = useFeed();
+  const posts = useUserPosts(profile.data?.id);
 
   const grid = useMemo<Post[]>(
-    () => feed.data?.pages.flatMap((p) => p.items) ?? [],
-    [feed.data],
+    () => posts.data?.pages.flatMap((p) => p.items) ?? [],
+    [posts.data],
   );
 
   return (
