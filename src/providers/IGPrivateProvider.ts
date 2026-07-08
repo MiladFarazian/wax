@@ -29,7 +29,7 @@ import type {
 } from "@/types/social";
 import { SocialProviderError } from "./SocialProvider";
 import { IGClient } from "./ig/client";
-import { endpoints } from "./ig/endpoints";
+import { endpoints, IG_GRAPHQL_URL } from "./ig/endpoints";
 import { decodeIGToken, type IGSession } from "./ig/session";
 import {
   mapActivity,
@@ -116,14 +116,16 @@ export class IGPrivateProvider implements SocialProvider {
   }
 
   async getFeed(cursor?: string): Promise<Page<Post>> {
-    // The web timeline is a POST (a GET just returns the web page shell).
-    const data = await this.client.post<any>(endpoints.timelineFeed, {
-      reason: cursor ? "pagination" : "cold_start_fetch",
-      ...(cursor ? { max_id: cursor } : {}),
+    // Web home feed is served by GraphQL (doc_id-based; ids rotate over time).
+    const data = await this.client.post<any>(IG_GRAPHQL_URL, {
+      doc_id: "8845758582119845",
+      variables: JSON.stringify(cursor ? { after: cursor, first: 12 } : { first: 12 }),
     });
+    const conn = data?.data?.xdt_api__v1__feed__timeline__connection;
+    const nodes = (conn?.edges ?? []).map((e: any) => e?.node ?? e);
     return {
-      items: mapFeedItems(data?.feed_items ?? data?.items ?? []),
-      nextCursor: data?.next_max_id || undefined,
+      items: mapFeedItems(nodes),
+      nextCursor: conn?.page_info?.has_next_page ? conn?.page_info?.end_cursor : undefined,
     };
   }
 

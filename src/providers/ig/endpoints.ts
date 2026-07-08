@@ -23,6 +23,9 @@ export const IG_API_BASE = `${IG_WEB_BASE}/api/v1`;
 /** Login page Wax loads in a webview so the user authenticates on IG directly. */
 export const IG_LOGIN_URL = `${IG_WEB_BASE}/accounts/login/`;
 
+/** Web GraphQL endpoint — the home timeline feed lives here (doc_id-based). */
+export const IG_GRAPHQL_URL = `${IG_WEB_BASE}/graphql/query`;
+
 /**
  * Headers matching the WEB client, so they're consistent with the web session
  * we captured. The web API authenticates via the sessionid cookie + the web
