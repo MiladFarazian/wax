@@ -64,6 +64,9 @@ export const endpoints = {
   // The web profile endpoint returns counts, HD avatar, and the first ~12 posts.
   webProfileInfo: (username: string) =>
     `${IG_API_BASE}/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+  // Blended top search (users/hashtags/places) — a GET the web session honors.
+  topSearch: (query: string) =>
+    `${IG_API_BASE}/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`,
   reelsTray: `${IG_API_BASE}/feed/reels_tray/`, // stories tray (name is IG's, not Reels)
   userInfo: (userId: string) => `${IG_API_BASE}/users/${userId}/info/`,
   userFeed: (userId: string) => `${IG_API_BASE}/feed/user/${userId}/`,

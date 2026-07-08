@@ -25,6 +25,7 @@ import type {
   Page,
   Post,
   StoryTray,
+  User,
   UserProfile,
 } from "@/types/social";
 import { SocialProviderError } from "./SocialProvider";
@@ -38,6 +39,7 @@ import {
   mapFeedItems,
   mapProfile,
   mapStoryTray,
+  mapUser,
   mapWebProfile,
   mapWebProfilePosts,
 } from "./ig/mappers";
@@ -139,10 +141,19 @@ export class IGPrivateProvider implements SocialProvider {
 
   // --- Profiles --------------------------------------------------------------
 
-  /** The username to query the web profile endpoint with (current user only). */
+  /** The username to query the web profile endpoint with, if we can resolve one. */
   private usernameFor(userId: ID): string | undefined {
-    const isMe = userId === "u_me" || userId === this.session?.userId;
-    return isMe ? this.session?.username : undefined;
+    if (userId === "u_me" || userId === this.session?.userId) return this.session?.username;
+    // A non-numeric "id" is actually a username (from the search flow / user route).
+    if (userId && !/^\d+$/.test(userId)) return userId;
+    return undefined;
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    const q = query.trim();
+    if (!q) return [];
+    const data = await this.client.get<any>(endpoints.topSearch(q));
+    return (data?.users ?? []).map((entry: any) => mapUser(entry?.user)).filter((u: User) => u.username);
   }
 
   async getProfile(userId: ID): Promise<UserProfile> {

@@ -40,6 +40,17 @@ export function useUserPosts(userId?: ID) {
   });
 }
 
+/** Live user search (debounce upstream by keeping the query stable). */
+export function useSearch(query: string) {
+  const q = query.trim();
+  return useQuery({
+    queryKey: ["search", q],
+    enabled: q.length > 0,
+    queryFn: () => getProvider().searchUsers(q),
+    staleTime: 30_000,
+  });
+}
+
 /** Create a post; on success prepends it to the cached feed so it shows at top. */
 export function useCreatePost() {
   const qc = useQueryClient();

@@ -209,6 +209,14 @@ export class MockProvider implements SocialProvider {
     return paginate(post, cursor);
   }
 
+  async searchUsers(query: string): Promise<User[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return Array.from({ length: 12 }, (_, i) => user(i + 1)).filter(
+      (u) => u.username.includes(q) || (u.fullName ?? "").toLowerCase().includes(q),
+    );
+  }
+
   async setFollow(_userId: ID, _follow: boolean): Promise<void> {}
   async setLike(_postId: ID, _like: boolean): Promise<void> {}
   async setSave(_postId: ID, _save: boolean): Promise<void> {}

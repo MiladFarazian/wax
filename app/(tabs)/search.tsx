@@ -1,27 +1,18 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFeed } from "@/lib/hooks";
+import { useFeed, useSearch } from "@/lib/hooks";
 import { useIG, type IGColors } from "@/theme/ig";
-import type { Post } from "@/types/social";
+import type { Post, User } from "@/types/social";
 
 /**
- * Search — IG's search field over an Explore grid, and a "Recent" list while the
- * field is focused. v1 has no query backend (Phase 2, OPEN-QUESTIONS #10); the
- * grid reuses feed media and Recent is illustrative so the tab feels real.
+ * Search — IG's search field over an Explore grid. Typing runs a real user
+ * search (topsearch); tapping a result opens that account's profile.
  */
-const RECENT = [
-  { id: "r1", username: "maya.rivera", name: "Maya Rivera", avatar: "https://i.pravatar.cc/150?img=5" },
-  { id: "r2", username: "leowoods", name: "Leo Woods", avatar: "https://i.pravatar.cc/150?img=12" },
-  { id: "r3", username: "the.hive", name: "The Hive Co.", avatar: "https://i.pravatar.cc/150?img=32" },
-  { id: "r4", username: "sunny.k", name: "Sunny Kaur", avatar: "https://i.pravatar.cc/150?img=45" },
-  { id: "r5", username: "field.notes", name: "Field Notes", avatar: "https://i.pravatar.cc/150?img=60" },
-];
-
 export default function Search() {
   const c = useIG();
   const router = useRouter();
@@ -29,13 +20,14 @@ export default function Search() {
   const [q, setQ] = useState("");
   const [focused, setFocused] = useState(false);
   const feed = useFeed();
+  const search = useSearch(q);
 
   const grid = useMemo<Post[]>(
     () => feed.data?.pages.flatMap((p) => p.items) ?? [],
     [feed.data],
   );
 
-  const showRecent = focused || q.length > 0;
+  const query = q.trim();
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top + 8 }]}>
@@ -51,6 +43,8 @@ export default function Search() {
             placeholderTextColor={c.secondary}
             style={[styles.input, { color: c.text }]}
             returnKeyType="search"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           {q ? (
             <Pressable onPress={() => setQ("")} hitSlop={8}>
@@ -60,8 +54,18 @@ export default function Search() {
         </View>
       </View>
 
-      {showRecent ? (
-        <RecentList c={c} />
+      {query.length > 0 ? (
+        <Results
+          c={c}
+          users={search.data ?? []}
+          loading={search.isPending && search.fetchStatus !== "idle"}
+          error={search.isError}
+          onPick={(u) => router.push(`/user/${u.username}` as Href)}
+        />
+      ) : focused ? (
+        <View style={styles.hint}>
+          <Text style={[styles.hintText, { color: c.secondary }]}>Search for people by name or username.</Text>
+        </View>
       ) : (
         <FlashList
           data={grid}
@@ -70,48 +74,83 @@ export default function Search() {
           estimatedItemSize={130}
           onEndReachedThreshold={0.6}
           onEndReached={() => feed.hasNextPage && feed.fetchNextPage()}
-          renderItem={({ item }) => (
-            <ExploreTile post={item} onPress={() => router.push(`/post/${item.id}`)} />
-          )}
+          renderItem={({ item }) => <ExploreTile post={item} />}
         />
       )}
     </View>
   );
 }
 
-function RecentList({ c }: { c: IGColors }) {
-  return (
-    <ScrollView keyboardShouldPersistTaps="handled">
-      <View style={styles.recentHead}>
-        <Text style={[styles.recentTitle, { color: c.text }]}>Recent</Text>
-        <Text style={[styles.seeAll, { color: c.link }]}>See all</Text>
+function Results({
+  c,
+  users,
+  loading,
+  error,
+  onPick,
+}: {
+  c: IGColors;
+  users: User[];
+  loading: boolean;
+  error: boolean;
+  onPick: (u: User) => void;
+}) {
+  if (loading) {
+    return (
+      <View style={styles.hint}>
+        <ActivityIndicator color={c.secondary} />
       </View>
-      {RECENT.map((r) => (
-        <View key={r.id} style={styles.recentRow}>
-          <Image source={r.avatar} style={styles.recentAvatar} contentFit="cover" />
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.hint}>
+        <Text style={[styles.hintText, { color: c.secondary }]}>Couldn't search right now. Try again.</Text>
+      </View>
+    );
+  }
+  if (users.length === 0) {
+    return (
+      <View style={styles.hint}>
+        <Text style={[styles.hintText, { color: c.secondary }]}>No results.</Text>
+      </View>
+    );
+  }
+  return (
+    <FlashList
+      data={users}
+      keyExtractor={(u) => u.id || u.username}
+      estimatedItemSize={62}
+      keyboardShouldPersistTaps="handled"
+      renderItem={({ item }) => (
+        <Pressable style={styles.row} onPress={() => onPick(item)}>
+          <Image source={item.avatarUrl} style={styles.avatar} contentFit="cover" />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.recentUser, { color: c.text }]}>{r.username}</Text>
-            <Text style={[styles.recentName, { color: c.secondary }]}>{r.name}</Text>
+            <View style={styles.nameRow}>
+              <Text style={[styles.user, { color: c.text }]}>{item.username}</Text>
+              {item.isVerified ? (
+                <Ionicons name="checkmark-circle" size={13} color={c.link} style={{ marginLeft: 3 }} />
+              ) : null}
+            </View>
+            {item.fullName ? <Text style={[styles.full, { color: c.secondary }]}>{item.fullName}</Text> : null}
           </View>
-          <Ionicons name="close" size={20} color={c.secondary} />
-        </View>
-      ))}
-    </ScrollView>
+        </Pressable>
+      )}
+    />
   );
 }
 
-function ExploreTile({ post, onPress }: { post: Post; onPress: () => void }) {
+function ExploreTile({ post }: { post: Post }) {
   const isCarousel = post.kind === "carousel" || post.media.length > 1;
   const isVideo = post.media[0]?.kind === "video";
   return (
-    <Pressable style={styles.tile} onPress={onPress}>
+    <View style={styles.tile}>
       <Image source={post.media[0]?.url} style={styles.tileImg} contentFit="cover" recyclingKey={post.id} />
       {isCarousel ? (
         <Ionicons name="copy" size={16} color="#fff" style={styles.tileIcon} />
       ) : isVideo ? (
         <Ionicons name="play" size={16} color="#fff" style={styles.tileIcon} />
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -127,13 +166,13 @@ const styles = StyleSheet.create({
     height: 38,
   },
   input: { flex: 1, fontSize: 15, padding: 0 },
-  recentHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10 },
-  recentTitle: { fontSize: 15, fontWeight: "700" },
-  seeAll: { fontSize: 14, fontWeight: "600" },
-  recentRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 8 },
-  recentAvatar: { width: 44, height: 44, borderRadius: 22 },
-  recentUser: { fontSize: 14, fontWeight: "600" },
-  recentName: { fontSize: 13, marginTop: 1 },
+  hint: { flex: 1, alignItems: "center", paddingTop: 28 },
+  hintText: { fontSize: 14, textAlign: "center" },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 8 },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  nameRow: { flexDirection: "row", alignItems: "center" },
+  user: { fontSize: 14, fontWeight: "600" },
+  full: { fontSize: 13, marginTop: 1 },
   tile: { flex: 1, aspectRatio: 1, margin: 0.5 },
   tileImg: { width: "100%", height: "100%" },
   tileIcon: { position: "absolute", top: 6, right: 6, textShadowColor: "rgba(0,0,0,0.4)", textShadowRadius: 3 },

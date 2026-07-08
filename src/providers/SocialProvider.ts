@@ -26,6 +26,7 @@ import type {
   Page,
   Post,
   StoryTray,
+  User,
   UserProfile,
 } from "@/types/social";
 
@@ -52,6 +53,9 @@ export interface SocialProvider {
   getProfile(userId: ID): Promise<UserProfile>;
   getUserPosts(userId: ID, cursor?: string): Promise<Page<Post>>;
   setFollow(userId: ID, follow: boolean): Promise<void>;
+
+  // --- Search ---
+  searchUsers(query: string): Promise<User[]>;
 
   // --- Post interactions ---
   setLike(postId: ID, like: boolean): Promise<void>;
