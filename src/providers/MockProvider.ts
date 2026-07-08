@@ -197,7 +197,7 @@ export class MockProvider implements SocialProvider {
     const base = userId === ME.id ? ME : user(parseInt(userId.replace("u_", ""), 10) || 1);
     return {
       ...base,
-      bio: "Silence the noise. Keep the connection.",
+      bio: "📷 photos & everyday moments\n🌤️ chasing good light",
       postCount: 42,
       followerCount: 1280,
       followingCount: 310,
